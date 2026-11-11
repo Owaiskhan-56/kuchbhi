@@ -1,38 +1,49 @@
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-import mongoose from "mongoose";
-import { clerkMiddleware } from "@clerk/express";
-import webhookRoutes from "./routes/webhookRoutes.js";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import connectDB from "./config/db.js";
+import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
-dotenv.config();
+import webhookRoutes from "./routes/webhookRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+
+// Get current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+connectDB();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173", credentials: true }));
+// Middleware
+app.use(cors({ origin: [process.env.CLIENT_URL, process.env.ADMIN_URL] }));
 
-// Webhook FIRST: needs the raw body, before express.json()
+// Webhook route (raw body is needed before express.json())
 app.use("/api/webhooks", express.raw({ type: "application/json" }), webhookRoutes);
 
-app.use(express.json());
-app.use(clerkMiddleware());
+app.use(express.json()); // lets us read JSON from req.body
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => {
-    console.error("MongoDB connection error:", err.message);
-    process.exit(1);
-  });
+app.use(clearMiddleware()); // clears the cart token on every request
 
+// Test route
 app.get("/", (req, res) => {
-  res.json({ message: "Store API is running" });
+  res.json({ success: true, message: "Shopify Dress Store API is running" });
 });
 
-// app.use("/api/products", productRoutes);
-// app.use("/api/cart", cartRoutes);
-// app.use("/api/orders", orderRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products", productRoutes);
+// Routes will be added here
+
+// Error middlewares must always be LAST
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
