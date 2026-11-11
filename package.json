@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@clerk/express": "^2.1.85"
+    "@clerk/express": "^2.1.85",
+    "multer": "^2.5.0",
+    "svix": "^2.10.0"
   }
 }
