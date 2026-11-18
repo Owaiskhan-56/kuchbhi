@@ -1,4 +1,3 @@
-// middleware/authMiddleware.js
 import { getAuth } from "@clerk/express";
 
 // Allows only signed-in users

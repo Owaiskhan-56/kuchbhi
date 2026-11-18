@@ -8,10 +8,12 @@ const productSchema = new mongoose.Schema(
     discountPrice: { type: Number, default: 0 },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     gender: { type: String, enum: ["Men", "Women", "Unisex"], required: true },
-    fabric: { type: String, default: "" },     // e.g. Ajrak, Cotton, Silk
-    embroidery: { type: String, default: "" }, // e.g. Sindhi Embroidery, Mirror Work
+    fabric: { type: String, default: "" },      // e.g. Ajrak, Cotton, Silk
+    embroidery: { type: String, default: "" },  // e.g. Sindhi Embroidery, Mirror Work
     sizes: [{ type: String }],
     colors: [{ type: String }],
+
+    
     images: [
       {
         url: { type: String, required: true },

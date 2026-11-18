@@ -2,6 +2,7 @@ import { Webhook } from "svix";
 import User from "../models/User.js";
 
 export const clerkWebhook = async (req, res) => {
+  // 1. Verify the request really came from Clerk
   const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
   let event;
 
@@ -17,7 +18,7 @@ export const clerkWebhook = async (req, res) => {
 
   const { type, data } = event;
 
-  // Save or update user
+  // 2. Save or update user
   if (type === "user.created" || type === "user.updated") {
     await User.findOneAndUpdate(
       { clerkId: data.id },
@@ -32,10 +33,10 @@ export const clerkWebhook = async (req, res) => {
     );
   }
 
-  // Delete user
+  // 3. Delete user
   if (type === "user.deleted") {
     await User.findOneAndDelete({ clerkId: data.id });
   }
 
-  return res.status(200).json({ success: true });
+  res.status(200).json({ success: true });
 };

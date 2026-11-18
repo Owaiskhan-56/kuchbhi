@@ -1,22 +1,19 @@
-import mongoose from "mongoose";
+import express from "express";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "../controllers/categoryController.js";
+// import { protect } from "../middleware/authMiddleware.js";
+// import { adminOnly } from "../middleware/adminMiddleware.js";
+import { upload } from "../middleware/uploadMiddleware.js";
 
-const categorySchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true
-    },
-    description: {
-      type: String,
-      default: ""
-    },
-    image: {
-      // Image fields are not clearly visible in the screenshot
-    },
-  },
-  { timestamps: true }
-);
+const router = express.Router();
 
-export default mongoose.model("Category", categorySchema);
+router.get("/", getCategories);
+router.post("/", upload.single("image"), createCategory);
+router.put("/:id", upload.single("image"), updateCategory);
+router.delete("/:id", deleteCategory);
+
+export default router;

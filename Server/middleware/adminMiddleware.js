@@ -1,4 +1,3 @@
-// middleware/adminMiddleware.js
 import { clerkClient } from "@clerk/express";
 
 // Use after protect. Allows only users with role "admin" in Clerk

@@ -1,5 +1,3 @@
-// errorMiddleware.js
-
 // 1. Runs when no route matches the request
 export const notFound = (req, res, next) => {
   res.status(404);

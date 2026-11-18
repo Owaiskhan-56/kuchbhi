@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
@@ -9,16 +8,14 @@ cloudinary.config({
 });
 
 // Upload one image buffer to Cloudinary
-export const uploadImage = (buffer, folder = "sindhi-dress-store") =>
-  new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      }
-    );
+export const uploadImage = (buffer, folder = "sindhi-dress-store") => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder }, (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
     stream.end(buffer);
   });
+};
 
 export default cloudinary;

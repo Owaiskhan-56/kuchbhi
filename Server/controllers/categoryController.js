@@ -1,108 +1,70 @@
+import Category from "../models/Category.js";
+import Product from "../models/Product.js";
+import cloudinary, { uploadImage } from "../config/cloudinary.js";
 
-import asyncHandler from "express-async-handler";
-import Category from "../models/categoryModel.js";
-import Product from "../models/productModel.js";
+// GET /api/categories  (public)
+export const getCategories = async (req, res) => {
+  const categories = await Category.find().sort("name");
+  res.json({ success: true, categories });
+};
 
-// @desc    Get all categories
-// @route   GET /api/categories
-// @access  Public
-const getCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find().sort({ createdAt: -1 });
-  res.json(categories);
-});
+// POST /api/categories  (admin)
+export const createCategory = async (req, res) => {
+  const { name, description } = req.body;
 
-// @desc    Get category by ID
-// @route   GET /api/categories/:id
-// @access  Public
-const getCategoryById = asyncHandler(async (req, res) => {
-  const category = await Category.findById(req.params.id);
-
-  if (!category) {
-    res.status(404);
-    throw new Error("Category not found");
-  }
-
-  res.json(category);
-});
-
-// @desc    Create a category
-// @route   POST /api/categories
-// @access  Private/Admin
-const createCategory = asyncHandler(async (req, res) => {
-  const { name, description, image } = req.body;
-
-  if (!name) {
-    res.status(400);
-    throw new Error("Please enter category name");
-  }
-
-  const categoryExists = await Category.findOne({ name });
-
-  if (categoryExists) {
+  const exists = await Category.findOne({ name });
+  if (exists) {
     res.status(400);
     throw new Error("Category already exists");
   }
 
-  const category = await Category.create({
-    name,
-    description,
-    image,
-  });
+  let image = {};
+  if (req.file) {
+    const result = await uploadImage(req.file.buffer, "sindhi-dress-store/categories");
+    image = { url: result.secure_url, public_id: result.public_id };
+  }
 
-  res.status(201).json(category);
-});
+  const category = await Category.create({ name, description, image });
+  res.status(201).json({ success: true, category });
+};
 
-// @desc    Update a category
-// @route   PUT /api/categories/:id
-// @access  Private/Admin
-const updateCategory = asyncHandler(async (req, res) => {
-  const { name, description, image } = req.body;
-
+// PUT /api/categories/:id  (admin)
+export const updateCategory = async (req, res) => {
   const category = await Category.findById(req.params.id);
-
   if (!category) {
     res.status(404);
     throw new Error("Category not found");
   }
 
-  if (name) category.name = name;
-  if (description) category.description = description;
-  if (image) category.image = image;
+  if (req.body.name) category.name = req.body.name;
+  if (req.body.description !== undefined) category.description = req.body.description;
 
-  const updatedCategory = await category.save();
+  if (req.file) {
+    if (category.image.public_id) await cloudinary.uploader.destroy(category.image.public_id);
+    const result = await uploadImage(req.file.buffer, "sindhi-dress-store/categories");
+    category.image = { url: result.secure_url, public_id: result.public_id };
+  }
 
-  res.json(updatedCategory);
-});
+  await category.save();
+  res.json({ success: true, category });
+};
 
-// @desc    Delete a category
-// @route   DELETE /api/categories/:id
-// @access  Private/Admin
-const deleteCategory = asyncHandler(async (req, res) => {
+// DELETE /api/categories/:id  (admin)
+export const deleteCategory = async (req, res) => {
   const category = await Category.findById(req.params.id);
-
   if (!category) {
     res.status(404);
     throw new Error("Category not found");
   }
 
-  const productsCount = await Product.countDocuments({
-    category: req.params.id,
-  });
-
-  if (productsCount) {
+  const productCount = await Product.countDocuments({ category: category._id });
+  if (productCount > 0) {
     res.status(400);
-    throw new Error("Cannot delete category with products");
+    throw new Error("Cannot delete: this category has products");
   }
 
-  await Category.findByIdAndDelete(req.params.id);
+  if (category.image.public_id) await cloudinary.uploader.destroy(category.image.public_id);
+  await category.deleteOne();
 
-  res.json({ message: "Category deleted" });
-});
-
-export {
-  getCategories,
-  getCategoryById,
-  createCategory,
-  updateCategory,
-  deleteCategory,
+  res.json({ success: true, message: "Category deleted" });
 };
